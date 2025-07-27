@@ -20,9 +20,8 @@ def format_number(n):
             return f"{n:,.0f}"
     return "N/A"
 
-def bordered_chart(title: str, fig: go.Figure):
-    """DISPLAYS A PLOTLY FIGURE WITH A TITLE AND A BORDER AROUND IT."""
-    st.markdown(f"### {title}")
+def bordered_chart(fig: go.Figure):
+    """DISPLAYS A PLOTLY FIGURE WITH A BORDER AROUND IT."""
     with st.container(border=True):
         st.plotly_chart(fig, use_container_width=True)
 
@@ -57,7 +56,6 @@ try:
     else:
         st.metric(label="💰 Current Price", value="Price not available", delta="N/A")
 
-
     st.markdown("### 📊 Additional Stats")
     col1, col2 = st.columns(2)
 
@@ -83,40 +81,42 @@ try:
 
     if not hist_data.empty:
 
-        with st.container(border=True):
-            # PLOT THE HISTORICAL DATA AND SMA
-            # ADD A 20-DAY SIMPLE MOVING AVERAGE (SMA)
-            hist_data["SMA_20"] = hist_data["Close"].rolling(window=20).mean()
+        # PLOT THE HISTORICAL DATA AND SMA
+        # ADD A 20-DAY SIMPLE MOVING AVERAGE (SMA)
+        hist_data["SMA_20"] = hist_data["Close"].rolling(window=20).mean()
 
-            fig = go.Figure()
+        fig = go.Figure()
 
-            fig.add_trace(go.Scatter(
-                x=hist_data.index,
-                y=hist_data["Close"],
-                mode="lines",
-                name="Closing Price",
-                line=dict(color="royalblue")
-            ))
+        fig.add_trace(go.Scatter(
+            x=hist_data.index,
+            y=hist_data["Close"],
+            mode="lines",
+            name="Closing Price",
+            line=dict(color="royalblue")
+        ))
 
-            fig.add_trace(go.Scatter(
-                x=hist_data.index,
-                y=hist_data["SMA_20"],
-                mode="lines",
-                name="20-Day SMA",
-                line=dict(color="orange", dash="dash")
-            ))
+        fig.add_trace(go.Scatter(
+            x=hist_data.index,
+            y=hist_data["SMA_20"],
+            mode="lines",
+            name="20-Day SMA",
+            line=dict(color="orange", dash="dash")
+        ))
 
-            fig.update_layout(
-                xaxis_title="Date",
-                yaxis_title="Price (INR)",
-                showlegend=True,
-                template="plotly_white",
-                height=400
-            )
-            # CORRECTED THE CHART TITLE FROM "PIE CHART" TO "PRICE CHART"
-            #bordered_chart("", fig)
+        fig.update_layout(
+            xaxis_title="Date",
+            yaxis_title="Price (INR)",
+            showlegend=True,
+            template="plotly_white",
+            height=400
+        )
+        #st.plotly_chart(fig, use_container_width=True)
+        bordered_chart(fig)
 
         # CALCULATE AND PLOT RSI (RELATIVE STRENGTH INDEX)
+
+        st.markdown('### 💡 RSI (Relative Strength Index)')
+
         rsi = RSIIndicator(close=hist_data["Close"], window=14)
         hist_data["RSI"] = rsi.rsi()
 
@@ -140,9 +140,12 @@ try:
             height=300,
             showlegend=False
         )
-        bordered_chart("💡 RSI (Relative Strength Index)", rsi_fig)
+        bordered_chart(rsi_fig)
 
         # CALCULATE AND PLOT MACD (MOVING AVERAGE CONVERGENCE DIVERGENCE)
+
+        st.markdown('### 📈 MACD (Moving Average Convergence Divergence)')
+
         macd = MACD(close=hist_data["Close"])
         hist_data["MACD"] = macd.macd()
         hist_data["MACD_Signal"] = macd.macd_signal()
@@ -178,11 +181,11 @@ try:
             template="plotly_white",
             height=300
         )
-        bordered_chart("📈 MACD (Moving Average Convergence Divergence)", macd_fig)
+        bordered_chart(macd_fig)
     else:
         st.warning("No historical data available for this ticker and time period.")
 
 # EXCEPTION HANDLING FOR INVALID TICKERS OR DATA FETCHING ERRORS
 except Exception as e:
     st.error(f"Couldn't fetch data for '{ticker}'. Please check the ticker symbol and your network connection.")
-    # st.error(e) # UNCOMMENT THIS LINE FOR DETAILED DEBUGGING
+    
